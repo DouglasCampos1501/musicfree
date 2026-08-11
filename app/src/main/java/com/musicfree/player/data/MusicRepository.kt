@@ -39,6 +39,10 @@ class MusicRepository(private val context: Context) {
         hiddenSongDao.hide(HiddenSongEntity(songId))
     }
 
+    suspend fun hideSongs(songIds: List<Long>) {
+        songIds.forEach { hiddenSongDao.hide(HiddenSongEntity(it)) }
+    }
+
     suspend fun unhideSong(songId: Long) {
         hiddenSongDao.unhide(songId)
     }

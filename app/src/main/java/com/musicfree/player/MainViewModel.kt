@@ -48,6 +48,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.hideSong(songId) }
     }
 
+    /** Oculta de uma vez todas as músicas visíveis com duração menor que [thresholdMs]. */
+    fun hideShortSongs(thresholdMs: Long = 60_000L) {
+        val shortSongIds = visibleSongs.value.filter { it.durationMs < thresholdMs }.map { it.id }
+        if (shortSongIds.isEmpty()) return
+        viewModelScope.launch { repository.hideSongs(shortSongIds) }
+    }
+
+    fun countShortSongs(thresholdMs: Long = 60_000L): Int =
+        visibleSongs.value.count { it.durationMs < thresholdMs }
+
     fun unhideSong(songId: Long) {
         viewModelScope.launch { repository.unhideSong(songId) }
     }
