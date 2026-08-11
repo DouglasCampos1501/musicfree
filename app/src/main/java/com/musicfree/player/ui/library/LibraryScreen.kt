@@ -1,6 +1,7 @@
 package com.musicfree.player.ui.library
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +11,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -150,18 +154,35 @@ private fun SongsTab(
     viewModel: MainViewModel,
     onAddToPlaylist: (Song) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(songs, key = { it.id }) { song ->
-            val index = songs.indexOf(song)
-            SongListItem(
-                song = song,
-                isCurrentlyPlaying = song.id == currentSongId,
-                isHidden = false,
-                onClick = { onSongClick(index) },
-                onToggleHide = { viewModel.hideSong(song.id) },
-                onAddToPlaylist = { onAddToPlaylist(song) },
-                onPlaySingleLoop = { viewModel.playSingleRepeated(song) }
-            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (songs.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(onClick = { viewModel.playFromQueue(songs, 0, shuffle = false) }) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                    Text(" Tocar tudo")
+                }
+                Button(onClick = { viewModel.playFromQueue(songs, 0, shuffle = true) }) {
+                    Icon(Icons.Filled.Shuffle, contentDescription = null)
+                    Text(" Aleatório")
+                }
+            }
+        }
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(songs, key = { it.id }) { song ->
+                val index = songs.indexOf(song)
+                SongListItem(
+                    song = song,
+                    isCurrentlyPlaying = song.id == currentSongId,
+                    isHidden = false,
+                    onClick = { onSongClick(index) },
+                    onToggleHide = { viewModel.hideSong(song.id) },
+                    onAddToPlaylist = { onAddToPlaylist(song) },
+                    onPlaySingleLoop = { viewModel.playSingleRepeated(song) }
+                )
+            }
         }
     }
 }
