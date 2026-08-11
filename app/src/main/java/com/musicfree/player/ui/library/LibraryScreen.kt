@@ -4,9 +4,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -14,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.musicfree.player.MainViewModel
 import com.musicfree.player.data.Song
 import com.musicfree.player.ui.common.SongListItem
@@ -30,12 +39,39 @@ fun LibraryScreen(
     onOpenArtist: (String) -> Unit,
     onAddToPlaylist: (Song) -> Unit
 ) {
-    val songs by viewModel.visibleSongs.collectAsState()
+    val allSongs by viewModel.visibleSongs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     var tabIndex by remember { mutableIntStateOf(0) }
+    var query by remember { mutableStateOf("") }
     val tabs = listOf("Músicas", "Álbuns", "Artistas")
 
+    val songs = remember(allSongs, query) {
+        if (query.isBlank()) {
+            allSongs
+        } else {
+            allSongs.filter {
+                it.title.contains(query, ignoreCase = true) || it.artist.contains(query, ignoreCase = true)
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text("Buscar por título ou artista") },
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Limpar busca")
+                    }
+                }
+            }
+        )
+
         TabRow(selectedTabIndex = tabIndex) {
             tabs.forEachIndexed { index, title ->
                 Tab(
