@@ -3,7 +3,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Círculo verde (símbolo de reprodução), dentro da zona segura do ícone adaptativo -->
     <path
         android:fillColor="#1DB954"
-        android:pathData="M54,24c-16.5,0 -30,13.5 -30,30s13.5,30 30,30 30,-13.5 30,-30 -13.5,-30 -30,-30zM66,68 C66,68 58,64 54,64 50,64 42,68 42,68 L42,40 C42,40 50,44 54,44 58,44 66,40 66,40 Z" />
+        android:pathData="M24,54 A30,30 0 1,1 84,54 A30,30 0 1,1 24,54 Z" />
+
+    <!-- Triângulo de play, branco, levemente deslocado para equilíbrio óptico -->
+    <path
+        android:fillColor="#0D0D0D"
+        android:pathData="M45,37 L45,71 L76,54 Z" />
 </vector>

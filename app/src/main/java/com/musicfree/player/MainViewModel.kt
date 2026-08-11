@@ -68,6 +68,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.removeSongFromPlaylist(playlistId, songId) }
     }
 
+    fun reorderPlaylist(playlistId: Long, orderedSongIds: List<Long>) {
+        viewModelScope.launch { repository.reorderPlaylist(playlistId, orderedSongIds) }
+    }
+
     fun songsForPlaylist(playlistId: Long) = repository.songsForPlaylist(playlistId)
 
     override fun onCleared() {

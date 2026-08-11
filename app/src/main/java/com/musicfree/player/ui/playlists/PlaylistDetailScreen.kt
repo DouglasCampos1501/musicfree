@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
@@ -16,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -23,11 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.musicfree.player.MainViewModel
-import com.musicfree.player.ui.common.SongListItem
+import com.musicfree.player.ui.common.ReorderableSongList
 import com.musicfree.player.ui.theme.TextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,21 +72,25 @@ fun PlaylistDetailScreen(
                         Text(" Aleatório")
                     }
                 }
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(songs, key = { it.id }) { song ->
-                        val index = songs.indexOf(song)
-                        SongListItem(
-                            song = song,
-                            isCurrentlyPlaying = song.id == playerState.currentSongId,
-                            isHidden = false,
-                            onClick = { viewModel.playFromQueue(songs, index) },
-                            onToggleHide = { viewModel.hideSong(song.id) },
-                            onAddToPlaylist = {},
-                            onPlaySingleLoop = { viewModel.playSingleRepeated(song) },
-                            onRemoveFromPlaylist = { viewModel.removeSongFromPlaylist(playlistId, song.id) }
-                        )
-                    }
-                }
+                Text(
+                    "Toque e segure a alça ☰ para reordenar",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+                ReorderableSongList(
+                    songs = songs,
+                    currentSongId = playerState.currentSongId,
+                    onSongClick = { index -> viewModel.playFromQueue(songs, index) },
+                    onToggleHide = { song -> viewModel.hideSong(song.id) },
+                    onAddToPlaylist = {},
+                    onPlaySingleLoop = { song -> viewModel.playSingleRepeated(song) },
+                    onRemove = { song -> viewModel.removeSongFromPlaylist(playlistId, song.id) },
+                    onOrderChanged = { reordered ->
+                        viewModel.reorderPlaylist(playlistId, reordered.map { it.id })
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

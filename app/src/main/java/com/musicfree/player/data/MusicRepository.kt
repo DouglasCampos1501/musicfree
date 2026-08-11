@@ -66,6 +66,10 @@ class MusicRepository(private val context: Context) {
         playlistDao.removeSongFromPlaylist(playlistId, songId)
     }
 
+    suspend fun reorderPlaylist(playlistId: Long, orderedSongIds: List<Long>) {
+        playlistDao.reorderPlaylist(playlistId, orderedSongIds)
+    }
+
     fun observePlaylistSongIds(playlistId: Long) = playlistDao.observePlaylistSongs(playlistId)
 
     fun songsForPlaylist(playlistId: Long) = combine(
