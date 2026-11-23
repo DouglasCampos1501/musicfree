@@ -40,6 +40,11 @@ fun ReorderableSongList(
     onPlaySingleLoop: (Song) -> Unit,
     onRemove: (Song) -> Unit,
     onOrderChanged: (List<Song>) -> Unit,
+    isPlaying: Boolean = false,
+    favoriteIds: Set<Long> = emptySet(),
+    onToggleFavorite: ((Song) -> Unit)? = null,
+    onPlayNext: ((Song) -> Unit)? = null,
+    onAddToQueue: ((Song) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val items = remember { mutableStateListOf<Song>() }
@@ -109,6 +114,11 @@ fun ReorderableSongList(
                     onAddToPlaylist = { onAddToPlaylist(song) },
                     onPlaySingleLoop = { onPlaySingleLoop(song) },
                     onRemoveFromPlaylist = { onRemove(song) },
+                    isFavorite = song.id in favoriteIds,
+                    onToggleFavorite = onToggleFavorite?.let { f -> { f(song) } },
+                    onPlayNext = onPlayNext?.let { f -> { f(song) } },
+                    onAddToQueue = onAddToQueue?.let { f -> { f(song) } },
+                    isPlaying = isPlaying,
                     modifier = Modifier.weight(1f)
                 )
             }

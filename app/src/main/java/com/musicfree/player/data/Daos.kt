@@ -59,3 +59,27 @@ interface HiddenSongDao {
     @Query("DELETE FROM hidden_songs WHERE songId = :songId")
     suspend fun unhide(songId: Long)
 }
+
+@Dao
+interface FavoriteSongDao {
+    @Query("SELECT songId FROM favorite_songs ORDER BY addedAt DESC")
+    fun observeFavoriteIds(): Flow<List<Long>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun add(entity: FavoriteSongEntity)
+
+    @Query("DELETE FROM favorite_songs WHERE songId = :songId")
+    suspend fun remove(songId: Long)
+}
+
+@Dao
+interface PlayStatDao {
+    @Query("SELECT * FROM play_stats ORDER BY playCount DESC, lastPlayedAt DESC")
+    fun observeStats(): Flow<List<PlayStatEntity>>
+
+    @Query("SELECT * FROM play_stats WHERE songId = :songId")
+    suspend fun get(songId: Long): PlayStatEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: PlayStatEntity)
+}

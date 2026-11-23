@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +64,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            MusicFreeTheme {
+            val themeMode by viewModel.themeMode.collectAsState()
+            val dynamicColor by viewModel.dynamicColor.collectAsState()
+
+            MusicFreeTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (hasPermission) {
                         AppNavGraph(viewModel = viewModel)

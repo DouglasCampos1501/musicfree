@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class MusicRepository(private val context: Context) {
@@ -14,6 +15,8 @@ class MusicRepository(private val context: Context) {
     private val db = AppDatabase.get(context)
     private val playlistDao = db.playlistDao()
     private val hiddenSongDao = db.hiddenSongDao()
+    private val favoriteDao = db.favoriteSongDao()
+    private val statDao = db.playStatDao()
 
     private val _allSongs = MutableStateFlow<List<Song>>(emptyList())
     val allSongs: StateFlow<List<Song>> = _allSongs.asStateFlow()
@@ -28,6 +31,30 @@ class MusicRepository(private val context: Context) {
     val hiddenSongs = combine(_allSongs, hiddenIds) { songs, hidden ->
         val hiddenSet = hidden.toSet()
         songs.filter { it.id in hiddenSet }
+    }
+
+    val favoriteIds = favoriteDao.observeFavoriteIds()
+    val playStats = statDao.observeStats()
+
+    val favoriteSongs = combine(visibleSongs, favoriteIds) { songs, favs ->
+        val byId = songs.associateBy { it.id }
+        favs.mapNotNull { byId[it] }
+    }
+
+    val mostPlayedSongs = combine(visibleSongs, playStats) { songs, stats ->
+        val byId = songs.associateBy { it.id }
+        stats.filter { it.playCount > 0 }.mapNotNull { byId[it.songId] }.take(100)
+    }
+
+    val recentlyAddedSongs = visibleSongs.map { songs -> songs.sortedByDescending { it.dateAdded }.take(100) }
+
+    suspend fun setFavorite(songId: Long, favorite: Boolean) {
+        if (favorite) favoriteDao.add(FavoriteSongEntity(songId)) else favoriteDao.remove(songId)
+    }
+
+    suspend fun registerPlay(songId: Long) {
+        val current = statDao.get(songId) ?: PlayStatEntity(songId)
+        statDao.upsert(current.copy(playCount = current.playCount + 1, lastPlayedAt = System.currentTimeMillis()))
     }
 
     suspend fun refresh() {

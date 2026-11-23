@@ -10,5 +10,9 @@ data class Song(
     val albumId: Long,
     val durationMs: Long,
     val contentUri: Uri,
-    val albumArtUri: Uri?
+    val albumArtUri: Uri?,
+    val dateAdded: Long = 0L,
+    val mimeType: String = "",
+    val folder: String = "",
+    val fileName: String = ""
 )

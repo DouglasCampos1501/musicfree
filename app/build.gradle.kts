@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.musicfree.player"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.musicfree.player"
@@ -60,9 +60,13 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
 
-    implementation("androidx.media3:media3-exoplayer:1.4.0")
-    implementation("androidx.media3:media3-session:1.4.0")
-    implementation("androidx.media3:media3-common:1.4.0")
+    implementation("androidx.media3:media3-exoplayer:1.5.0")
+    implementation("androidx.media3:media3-session:1.5.0")
+    implementation("androidx.media3:media3-common:1.5.0")
+    // Decoder FFmpeg: WMA, APE, ALAC, AC3, DTS e outros formatos que o ExoPlayer não toca sozinho
+    implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.5.0+1")
+    implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation("androidx.glance:glance-appwidget:1.1.0")
     implementation("com.google.guava:guava:33.2.1-android")
 
     implementation("androidx.room:room-runtime:2.6.1")

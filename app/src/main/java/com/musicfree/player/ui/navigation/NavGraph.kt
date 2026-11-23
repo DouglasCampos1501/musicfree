@@ -1,12 +1,19 @@
 package com.musicfree.player.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -31,6 +38,7 @@ import com.musicfree.player.data.Song
 import com.musicfree.player.ui.library.FilteredSongListScreen
 import com.musicfree.player.ui.library.HiddenSongsScreen
 import com.musicfree.player.ui.library.LibraryScreen
+import com.musicfree.player.ui.settings.SettingsScreen
 import com.musicfree.player.ui.player.MiniPlayer
 import com.musicfree.player.ui.player.PlayerScreen
 import com.musicfree.player.ui.playlists.AddToPlaylistSheet
@@ -42,13 +50,15 @@ import java.net.URLEncoder
 private const val ROUTE_LIBRARY = "library"
 private const val ROUTE_PLAYLISTS = "playlists"
 private const val ROUTE_HIDDEN = "hidden"
+private const val ROUTE_SETTINGS = "settings"
 
 private data class BottomTab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val bottomTabs = listOf(
     BottomTab(ROUTE_LIBRARY, "Biblioteca", Icons.Filled.LibraryMusic),
     BottomTab(ROUTE_PLAYLISTS, "Playlists", Icons.Filled.QueueMusic),
-    BottomTab(ROUTE_HIDDEN, "Ocultas", Icons.Filled.VisibilityOff)
+    BottomTab(ROUTE_HIDDEN, "Ocultas", Icons.Filled.VisibilityOff),
+    BottomTab(ROUTE_SETTINGS, "Ajustes", Icons.Filled.Settings)
 )
 
 @Composable
@@ -59,11 +69,21 @@ fun AppNavGraph(viewModel: MainViewModel) {
     val hiddenSongs by viewModel.hiddenSongs.collectAsState()
     var showPlayer by remember { mutableStateOf(false) }
     var songToAddToPlaylist by remember { mutableStateOf<Song?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.toast.collect { snackbarHostState.showSnackbar(it) }
+    }
+    BackHandler(enabled = showPlayer) { showPlayer = false }
 
     val currentSong = (allSongs + hiddenSongs).find { it.id == playerState.currentSongId }
 
     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column {
                 AnimatedVisibility(visible = currentSong != null && !showPlayer) {
@@ -153,6 +173,9 @@ fun AppNavGraph(viewModel: MainViewModel) {
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable(ROUTE_SETTINGS) {
+                    SettingsScreen(viewModel = viewModel)
+                }
                 composable(ROUTE_HIDDEN) {
                     HiddenSongsScreen(viewModel = viewModel)
                 }
@@ -160,7 +183,11 @@ fun AppNavGraph(viewModel: MainViewModel) {
         }
     }
 
-    if (showPlayer) {
+    AnimatedVisibility(
+        visible = showPlayer,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it })
+    ) {
         PlayerScreen(
             viewModel = viewModel,
             currentSong = currentSong,

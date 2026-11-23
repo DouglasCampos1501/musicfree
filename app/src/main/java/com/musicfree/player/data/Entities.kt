@@ -23,3 +23,16 @@ data class HiddenSongEntity(
     @PrimaryKey val songId: Long,
     val hiddenAt: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "favorite_songs")
+data class FavoriteSongEntity(
+    @PrimaryKey val songId: Long,
+    val addedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "play_stats")
+data class PlayStatEntity(
+    @PrimaryKey val songId: Long,
+    val playCount: Int = 0,
+    val lastPlayedAt: Long = 0L
+)

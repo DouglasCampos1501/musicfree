@@ -10,7 +10,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalIconToggleButton
+import com.musicfree.player.playback.RepeatMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +44,10 @@ fun PlaylistDetailScreen(
 ) {
     val songs by remember(playlistId) { viewModel.songsForPlaylist(playlistId) }.collectAsState(initial = emptyList())
     val playerState by viewModel.playerState.collectAsState()
+    val favorites by viewModel.favoriteIds.collectAsState()
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("audio/x-mpegurl")
+    ) { uri -> if (uri != null) viewModel.exportPlaylistM3u(uri, songs) }
 
     Scaffold(
         topBar = {
@@ -46,6 +56,14 @@ fun PlaylistDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { exportLauncher.launch("$playlistName.m3u") },
+                        enabled = songs.isNotEmpty()
+                    ) {
+                        Icon(Icons.Filled.FileDownload, contentDescription = "Exportar playlist (.m3u)")
                     }
                 }
             )
@@ -71,6 +89,16 @@ fun PlaylistDetailScreen(
                         Icon(Icons.Filled.Shuffle, contentDescription = null)
                         Text(" Aleatório")
                     }
+                    val loopOn = playerState.repeatMode == RepeatMode.ALL
+                    FilledTonalIconToggleButton(
+                        checked = loopOn,
+                        onCheckedChange = { viewModel.player.toggleRepeatAll() }
+                    ) {
+                        Icon(
+                            Icons.Filled.Repeat,
+                            contentDescription = if (loopOn) "Desativar loop da playlist" else "Repetir playlist inteira"
+                        )
+                    }
                 }
                 Text(
                     "Toque e segure a alça ☰ para reordenar",
@@ -89,6 +117,11 @@ fun PlaylistDetailScreen(
                     onOrderChanged = { reordered ->
                         viewModel.reorderPlaylist(playlistId, reordered.map { it.id })
                     },
+                    isPlaying = playerState.isPlaying,
+                    favoriteIds = favorites,
+                    onToggleFavorite = { song -> viewModel.toggleFavorite(song.id) },
+                    onPlayNext = { song -> viewModel.player.playNext(song) },
+                    onAddToQueue = { song -> viewModel.player.addToQueue(song) },
                     modifier = Modifier.fillMaxSize()
                 )
             }

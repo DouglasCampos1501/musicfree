@@ -38,6 +38,7 @@ fun FilteredSongListScreen(
     onAddToPlaylist: (Song) -> Unit
 ) {
     val playerState by viewModel.playerState.collectAsState()
+    val favorites by viewModel.favoriteIds.collectAsState()
 
     Scaffold(
         topBar = {
@@ -75,7 +76,12 @@ fun FilteredSongListScreen(
                         onClick = { viewModel.playFromQueue(songs, index) },
                         onToggleHide = { viewModel.hideSong(song.id) },
                         onAddToPlaylist = { onAddToPlaylist(song) },
-                        onPlaySingleLoop = { viewModel.playSingleRepeated(song) }
+                        onPlaySingleLoop = { viewModel.playSingleRepeated(song) },
+                        isFavorite = song.id in favorites,
+                        onToggleFavorite = { viewModel.toggleFavorite(song.id) },
+                        onPlayNext = { viewModel.player.playNext(song) },
+                        onAddToQueue = { viewModel.player.addToQueue(song) },
+                        isPlaying = playerState.isPlaying
                     )
                 }
             }
