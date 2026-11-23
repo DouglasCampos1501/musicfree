@@ -91,6 +91,9 @@ class LyricsRepository(private val context: Context, private val prefs: Prefs) {
         true
     }
 
+    /** Salva o texto (LRC ou simples) baixado da internet como letra da [song]. */
+    suspend fun save(song: Song, text: String) = withContext(Dispatchers.IO) { fileFor(song.id).writeText(text) }
+
     suspend fun remove(song: Song) = withContext(Dispatchers.IO) { fileFor(song.id).delete() }
 
     /** Reindexa a pasta de letras (chamar ao escolher ou trocar a pasta). */

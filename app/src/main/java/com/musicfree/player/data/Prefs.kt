@@ -40,6 +40,7 @@ class Prefs(private val context: Context) {
         val EQ_ENABLED = booleanPreferencesKey("eq_enabled")
         val EQ_LEVELS = stringPreferencesKey("eq_levels")   // níveis em milibéis separados por vírgula
         val LOUDNESS = intPreferencesKey("loudness_mb")
+        val DRIVE_KEY = stringPreferencesKey("drive_api_key")
         val LYRICS_TREE = stringPreferencesKey("lyrics_tree_uri")
     }
 
@@ -67,6 +68,9 @@ class Prefs(private val context: Context) {
         it[Keys.EQ_LEVELS] = levels.joinToString(",")
         it[Keys.LOUDNESS] = loudnessMb
     }
+
+    val driveApiKey: Flow<String> = context.dataStore.data.map { it[Keys.DRIVE_KEY].orEmpty() }
+    suspend fun setDriveApiKey(key: String) = context.dataStore.edit { it[Keys.DRIVE_KEY] = key.trim() }
 
     val lyricsTree: Flow<String?> = context.dataStore.data.map { it[Keys.LYRICS_TREE] }
     suspend fun setLyricsTree(uri: String?) = context.dataStore.edit {

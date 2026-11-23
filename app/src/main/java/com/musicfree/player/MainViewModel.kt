@@ -203,6 +203,57 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.refresh() }
     }
 
+    // ---- Importação do Google Drive ----
+    private val drive = com.musicfree.player.data.DriveImporter(application)
+    val driveProgress = drive.progress
+    val driveApiKey: StateFlow<String> = prefs.driveApiKey
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    private var driveJob: kotlinx.coroutines.Job? = null
+
+    fun setDriveApiKey(key: String) {
+        viewModelScope.launch { prefs.setDriveApiKey(key) }
+    }
+
+    fun importFromDrive(link: String) {
+        val folderId = drive.parseFolderId(link)
+        val key = driveApiKey.value
+        if (folderId == null) { _toast.tryEmit("Link da pasta inválido"); return }
+        if (key.isBlank()) { _toast.tryEmit("Informe a chave de API do Google Drive"); return }
+        if (driveJob?.isActive == true) return
+        driveJob = viewModelScope.launch {
+            drive.import(folderId, key)
+            kotlinx.coroutines.delay(1500) // dá tempo ao MediaStore de indexar os arquivos novos
+            repository.refresh()
+        }
+    }
+
+    fun cancelDriveImport() {
+        driveJob?.cancel()
+        viewModelScope.launch { kotlinx.coroutines.delay(500); repository.refresh() }
+    }
+
+    // ---- Correção automática de nomes, capas e letras ----
+    private val fixer = com.musicfree.player.data.MetadataFixer(application, repository, app.lyrics)
+    val fixProgress = fixer.progress
+    private var fixJob: kotlinx.coroutines.Job? = null
+
+    fun fixMetadata(onlyIncomplete: Boolean) {
+        if (fixJob?.isActive == true) return
+        fixJob = viewModelScope.launch {
+            fixer.run(onlyIncomplete)
+            _lyricsVersion.value++
+        }
+    }
+
+    fun cancelFix() { fixJob?.cancel() }
+
+    fun undoFixes() {
+        viewModelScope.launch {
+            repository.clearAllMeta()
+            _toast.tryEmit("Correções automáticas desfeitas")
+        }
+    }
+
     fun playFromQueue(queue: List<Song>, startIndex: Int, shuffle: Boolean? = null) {
         player.playQueue(queue, startIndex, shuffle)
     }

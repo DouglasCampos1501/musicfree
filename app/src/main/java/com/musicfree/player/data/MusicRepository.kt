@@ -2,6 +2,7 @@ package com.musicfree.player.data
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,17 +19,44 @@ class MusicRepository(private val context: Context) {
     private val favoriteDao = db.favoriteSongDao()
     private val statDao = db.playStatDao()
 
-    private val _allSongs = MutableStateFlow<List<Song>>(emptyList())
-    val allSongs: StateFlow<List<Song>> = _allSongs.asStateFlow()
+    private val metaDao = db.songMetaDao()
+
+    private val scanned = MutableStateFlow<List<Song>>(emptyList())
+
+    /** Músicas do MediaStore com as correções de título/artista/álbum/capa do app aplicadas. */
+    val allSongs: Flow<List<Song>> = combine(scanned, metaDao.observeAll()) { songs, metas ->
+        if (metas.isEmpty()) songs else {
+            val byId = metas.associateBy { it.songId }
+            songs.map { s ->
+                val m = byId[s.id] ?: return@map s
+                s.copy(
+                    title = m.title ?: s.title,
+                    artist = m.artist ?: s.artist,
+                    album = m.album ?: s.album,
+                    albumArtUri = m.coverPath?.let { android.net.Uri.fromFile(java.io.File(it)) } ?: s.albumArtUri
+                )
+            }
+        }
+    }
+
+    suspend fun processedMetaIds(): List<Long> = metaDao.processedIds()
+
+    suspend fun saveMeta(entity: SongMetaEntity) = metaDao.upsert(entity)
+
+    /** Desfaz todas as correções automáticas (e apaga as capas baixadas). */
+    suspend fun clearAllMeta() {
+        metaDao.coverPaths().forEach { runCatching { java.io.File(it).delete() } }
+        metaDao.clear()
+    }
 
     val hiddenIds = hiddenSongDao.observeHiddenIds()
 
-    val visibleSongs = combine(_allSongs, hiddenIds) { songs, hidden ->
+    val visibleSongs = combine(allSongs, hiddenIds) { songs, hidden ->
         val hiddenSet = hidden.toSet()
         songs.filterNot { it.id in hiddenSet }
     }
 
-    val hiddenSongs = combine(_allSongs, hiddenIds) { songs, hidden ->
+    val hiddenSongs = combine(allSongs, hiddenIds) { songs, hidden ->
         val hiddenSet = hidden.toSet()
         songs.filter { it.id in hiddenSet }
     }
@@ -59,7 +87,7 @@ class MusicRepository(private val context: Context) {
 
     suspend fun refresh() {
         val songs = withContext(Dispatchers.IO) { scanner.scanAll() }
-        _allSongs.value = songs
+        scanned.value = songs
     }
 
     suspend fun hideSong(songId: Long) {

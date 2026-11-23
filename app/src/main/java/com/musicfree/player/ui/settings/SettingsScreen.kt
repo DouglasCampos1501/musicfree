@@ -12,7 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -174,6 +176,94 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 OutlinedButton(onClick = { viewModel.setLyricsFolder(null) }) { Text("Remover pasta") }
             }
         }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SectionTitle("Importar do Google Drive")
+        val savedKey by viewModel.driveApiKey.collectAsState()
+        val drive by viewModel.driveProgress.collectAsState()
+        var keyText by remember(savedKey) { mutableStateOf(savedKey) }
+        var linkText by remember { mutableStateOf("") }
+        Text(
+            "Coloque as músicas numa pasta do Drive compartilhada como \"qualquer pessoa com o link\", " +
+                "cole o link abaixo e o app baixa tudo para Música/MusicFree. Mantenha o app aberto durante o download. " +
+                "Precisa de uma chave de API gratuita (Google Cloud → ativar \"Google Drive API\" → Credenciais → Chave de API).",
+            color = TextSecondary,
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedTextField(
+            value = keyText,
+            onValueChange = { keyText = it },
+            label = { Text("Chave de API do Google") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = linkText,
+            onValueChange = { linkText = it },
+            label = { Text("Link da pasta do Drive") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                enabled = !drive.running,
+                onClick = {
+                    viewModel.setDriveApiKey(keyText)
+                    viewModel.importFromDrive(linkText)
+                }
+            ) { Text("Baixar músicas") }
+            if (drive.running) {
+                OutlinedButton(onClick = { viewModel.cancelDriveImport() }) { Text("Cancelar") }
+            }
+        }
+        if (drive.running) {
+            LinearProgressIndicator(
+                progress = { if (drive.total > 0) drive.done / drive.total.toFloat() else 0f },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                if (drive.total > 0) "${drive.done}/${drive.total} — ${drive.current}" else drive.current,
+                color = TextSecondary,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        drive.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        SectionTitle("Corrigir nomes, capas e letras")
+        val fix by viewModel.fixProgress.collectAsState()
+        Text(
+            "Procura na internet (MusicBrainz, Cover Art Archive e LRCLIB) o nome, artista, álbum, capa e letra " +
+                "usando as tags, o nome do arquivo e a duração. Nomes como \"Faixa 1\" sem nenhuma outra pista " +
+                "não podem ser identificados. As correções ficam só no app; os arquivos não são alterados. " +
+                "Leva cerca de 1 segundo por música.",
+            color = TextSecondary,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(enabled = !fix.running, onClick = { viewModel.fixMetadata(true) }) {
+                Text("Só incompletas")
+            }
+            OutlinedButton(enabled = !fix.running, onClick = { viewModel.fixMetadata(false) }) {
+                Text("Biblioteca toda")
+            }
+            if (fix.running) {
+                OutlinedButton(onClick = { viewModel.cancelFix() }) { Text("Parar") }
+            }
+        }
+        if (fix.running) {
+            LinearProgressIndicator(
+                progress = { if (fix.total > 0) fix.done / fix.total.toFloat() else 0f },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "${fix.done}/${fix.total} — ${fix.current}",
+                color = TextSecondary,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        fix.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        OutlinedButton(enabled = !fix.running, onClick = { viewModel.undoFixes() }) { Text("Desfazer correções automáticas") }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         SectionTitle("Biblioteca")
